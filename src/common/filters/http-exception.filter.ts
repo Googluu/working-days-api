@@ -2,7 +2,7 @@ import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from
 import { Response } from 'express';
 import { ApiErrorResponse } from '../interfaces/working-days.interface';
 
-@Catch()
+@Catch() // captura TODAS las excepciones
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();

@@ -18,7 +18,7 @@ export class WorkingDaysService {
       lunchStart: 12, // 12:00 PM
       lunchEnd: 13    // 1:00 PM
     },
-    workingDays: [1, 2, 3, 4, 5] // Monday to Friday
+    workingDays: [1, 2, 3, 4, 5] // lunes a viernes
   };
 
   constructor(private readonly holidaysService: HolidaysService) {}
@@ -26,14 +26,14 @@ export class WorkingDaysService {
   calculateWorkingDate(queryDto: WorkingDaysQueryDto): ApiSuccessResponse {
     const params = this.parseAndValidateParams(queryDto);
     
-    // Get starting date in Colombia timezone
+    // Obtener fecha de inicio en la zona horaria de Colombia
     const startDate = params.date 
       ? moment.tz(params.date, this.config.timezone)
       : moment.tz(this.config.timezone);
 
     let resultDate = this.adjustToWorkingTime(startDate.clone());
 
-    // First add days if specified
+    // Primero agregue dias si se especifica
     if (params.days) {
       resultDate = this.addWorkingDays(resultDate, params.days);
     }
@@ -52,13 +52,13 @@ export class WorkingDaysService {
   private parseAndValidateParams(queryDto: WorkingDaysQueryDto): ParsedQueryParams {
     const { days, hours, date } = queryDto;
 
-    // At least one parameter must be provided
+    // Se debe proporcionar al menos un parámetro
     if (!days && !hours) {
       throw new BadRequestException('At least one parameter (days or hours) must be provided');
     }
 
     const params: ParsedQueryParams = {};
-
+    // conversion de str a numb
     if (days) {
       const daysNum = parseInt(days, 10);
       if (isNaN(daysNum) || daysNum <= 0) {
@@ -100,27 +100,27 @@ export class WorkingDaysService {
   private adjustToWorkingTime(date: moment.Moment): moment.Moment {
     const workingDate = date.clone();
     
-    // If not a working day, move to next working day
+    // si no es dia laborable pasar al siguiente dia laborable (fin de semana o festivo)
     while (!this.isWorkingDay(workingDate)) {
-      workingDate.add(1, 'day').startOf('day').hour(this.config.workingHours.start);
+      workingDate.add(1, 'day').startOf('day').hour(this.config.workingHours.start); // siguiente dia 8 AM
     }
     
-    // If working day but outside working hours, adjust
+    // si es dia laborable pero fuera de horario laboral, ajuste
     const hour = workingDate.hour();
     const { start, end, lunchStart, lunchEnd } = this.config.workingHours;
     
     if (hour < start) {
-      // Before working hours
+      // Antes del horario laboral
       workingDate.hour(start).minute(0).second(0).millisecond(0);
     } else if (hour >= end) {
-      // After working hours, move to next working day
+      // Después del horario laboral pasar al siguiente día laborable
       workingDate.add(1, 'day');
       while (!this.isWorkingDay(workingDate)) {
         workingDate.add(1, 'day');
       }
       workingDate.hour(start).minute(0).second(0).millisecond(0);
     } else if (hour >= lunchStart && hour < lunchEnd) {
-      // During lunch break
+      // durante el descanso de almuerzo
       workingDate.hour(lunchEnd).minute(0).second(0).millisecond(0);
     }
     
@@ -133,7 +133,7 @@ export class WorkingDaysService {
     for (let i = 0; i < days; i++) {
       do {
         resultDate.add(1, 'day');
-      } while (!this.isWorkingDay(resultDate));
+      } while (!this.isWorkingDay(resultDate)); // saltar fines de semana y festivos
     }
     
     return resultDate;
@@ -151,12 +151,12 @@ export class WorkingDaysService {
       let availableHoursUntilLunch = 0;
       let availableHoursAfterLunch = 0;
       
-      // Calculate available hours before lunch
+      // Calcular horas disponibles antes del almuerzo
       if (currentHour < lunchStart) {
         availableHoursUntilLunch = lunchStart - currentHour - (currentMinute / 60);
       }
       
-      // Calculate available hours after lunch
+      // Calcular horas disponibles despues del almuerzo
       if (currentHour < lunchEnd) {
         availableHoursAfterLunch = end - lunchEnd;
       } else if (currentHour < end) {
@@ -166,20 +166,20 @@ export class WorkingDaysService {
       const totalAvailableHours = availableHoursUntilLunch + availableHoursAfterLunch;
       
       if (remainingHours <= totalAvailableHours) {
-        // Can finish today
+        // Puede terminar hoy
         if (remainingHours <= availableHoursUntilLunch) {
-          // Finish before lunch
+          // Terminar antes del almuerzo
           resultDate.add(remainingHours, 'hours');
           remainingHours = 0;
         } else {
-          // Need to continue after lunch
+          // Necesita continuar después del almuerzo
           const hoursAfterLunch = remainingHours - availableHoursUntilLunch;
           resultDate.hour(lunchEnd).minute(0).second(0).millisecond(0);
           resultDate.add(hoursAfterLunch, 'hours');
           remainingHours = 0;
         }
       } else {
-        // Move to next working day
+        // Mover al siguiente día laborable
         remainingHours -= totalAvailableHours;
         resultDate.add(1, 'day');
         

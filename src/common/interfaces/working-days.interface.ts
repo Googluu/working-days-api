@@ -6,9 +6,9 @@ export interface WorkingHours {
 }
 
 export interface WorkingDayConfig {
-  timezone: string;
-  workingHours: WorkingHours;
-  workingDays: number[];
+  timezone: string; // 'America/Bogota'
+  workingHours: WorkingHours; // 8-17 con almuerzo 12-13
+  workingDays: number[]; // [1,2,3,4,5] = Lun-Vie
 }
 
 export interface ApiSuccessResponse {
