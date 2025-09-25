@@ -8,6 +8,27 @@ import {
 } from '../common/interfaces/working-days.interface';
 import { WorkingDaysQueryDto } from '../common/dto/working-days.dto';
 
+/**
+ * Servicio principal para el cálculo de fechas hábiles en Colombia.
+ * 
+ * Maneja toda la lógica de negocio relacionada con:
+ * - Ajuste a horarios laborales
+ * - Suma de días y horas hábiles
+ * - Exclusión de días festivos
+ * - Conversión de zonas horarias (Colombia ↔ UTC)
+ * 
+ * @example
+ * ```typescript
+ * // Sumar 1 día + 2 horas desde fecha específica
+ * const result = service.calculateWorkingDate({
+ *   days: '1',
+ *   hours: '2', 
+ *   date: '2025-04-10T15:00:00.000Z'
+ * });
+ * // Returns: { date: '2025-04-21T20:00:00.000Z' }
+ * ```
+ */
+
 @Injectable()
 export class WorkingDaysService {
   private readonly config: WorkingDayConfig = {
@@ -38,12 +59,12 @@ export class WorkingDaysService {
       resultDate = this.addWorkingDays(resultDate, params.days);
     }
 
-    // Then add hours if specified
+    // Luego agregue horas si se especifica
     if (params.hours) {
       resultDate = this.addWorkingHours(resultDate, params.hours);
     }
 
-    // Convert to UTC and return
+    // convertir a UTC y luego retornar
     return {
       date: resultDate.utc().toISOString()
     };

@@ -1,6 +1,19 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import axios from 'axios';
 
+/**
+ * Servicio para gestionar los días festivos colombianos.
+ * 
+ * Carga automáticamente la lista de festivos desde una fuente externa
+ * al inicializar la aplicación y proporciona métodos para consultar
+ * si una fecha específica es festiva.
+ * 
+ * @example
+ * ```typescript
+ * const isHoliday = holidaysService.isHoliday(new Date('2025-01-01')); // true
+ * ```
+ */
+
 @Injectable()
 export class HolidaysService implements OnModuleInit {
   private readonly logger = new Logger(HolidaysService.name);
@@ -36,3 +49,21 @@ export class HolidaysService implements OnModuleInit {
     await this.loadHolidays();
   }
 }
+
+ /**
+   * Verifica si una fecha específica es día festivo en Colombia.
+   * 
+   * @param date - Fecha a verificar
+   * @returns true si es día festivo, false en caso contrario
+   * 
+   * @example
+   * ```typescript
+   * // Año Nuevo
+   * isHoliday(new Date('2025-01-01')) // true
+   * 
+   * // Día normal
+   * isHoliday(new Date('2025-01-02')) // false
+   * 
+   * // Semana Santa 2025
+   * isHoliday(new Date('2025-04-17')) // true 
+   * */
