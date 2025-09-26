@@ -65,6 +65,9 @@ curl "http://localhost:3000/api/working-days?hours=2"
 curl "http://localhost:3000/api/working-days?days=1&hours=4&date=2025-04-10T15:00:00.000Z"
 ```
 
+## Doc con Swagger
+**Ir a la siguiente ruta `http://localhost:3000/api/docs`**
+
 ## Test con jest
 **Usando los tres ejemplo de la prueba**
 📌 Ejemplos
@@ -82,9 +85,37 @@ Resultado esperado: jueves a las 10:00 a.m. (hora Colombia) → "2025-XX-XXT15:0
 npm run test:e2e
 
 # output esperada
+ PASS  test/working-days.e2e-spec.ts
+  Working Days API (e2e)
+    🔧 Debug Tests - Verificar fechas y festivos
+      ✓ Debe verificar que festivos están cargados correctamente (37 ms)
+      ✓ Debe verificar ajuste por Reyes Magos (6 enero) (6 ms)
+    ❌ Casos de Error (verificados)
+      ✓ Debe fallar si no se proporciona days ni hours (24 ms)
+      ✓ Debe fallar con formato de fecha inválido (8 ms)
+      ✓ Debe fallar con días negativos (5 ms)
+      ✓ Debe fallar con horas no numéricas (12 ms)
+    ✅ Casos Básicos - Fechas sin festivos
+      ✓ Debe sumar 1 hora desde fecha específica válida (sin festivos) (8 ms)
+      ✓ Debe usar fecha actual si no se proporciona date (8 ms)
+    📌 Casos Específicos - CORREGIDOS con fechas reales
+      ✓ Caso 1: Viernes 5:00 PM + 1 hora = Siguiente día laboral 9:00 AM (8 ms)
+      ✓ Caso 2: Sábado 2:00 PM + 1 hora = Siguiente día laboral 9:00 AM (8 ms)
+      ✓ Caso 3: Martes 3:00 PM + 1 día + 4 horas = Jueves 10:00 AM (6 ms)
+    ⏰ Casos de Horario Laboral
+      ✓ Debe ajustar fecha antes de 8:00 AM a las 8:00 AM (6 ms)
+      ✓ Debe saltar el horario de almuerzo (12:00-1:00 PM) (6 ms)
+      ✓ Debe mover a siguiente día laboral si se pasa de 5:00 PM (5 ms)
+    📅 Casos de Días Hábiles
+      ✓ Debe sumar días hábiles saltando fin de semana (7 ms)
+      ✓ Debe sumar 8 horas hábiles = 1 día laboral completo (5 ms)
+    🎄 Casos con Días Festivos
+      ✓ Debe saltar Reyes Magos (6 enero) (4 ms)
+    🏥 Health Check
+      ✓ GET / debe retornar mensaje de bienvenida (5 ms)
+
 Test Suites: 1 passed, 1 total
-Tests:       12 passed, 12 total
+Tests:       18 passed, 18 total
 Snapshots:   0 total
-Time:        4.897 s, estimated 5 s
+Time:        5.148 s
 ```
-**NOTA: apareceran algunos types errors pero es simplemente por el tipo de dato que les estoy pasando los parámetros ya que se están enviando como strings y la validación de class-validator los está rechazando**
