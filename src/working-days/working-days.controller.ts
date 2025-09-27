@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
 import { WorkingDaysService } from './working-days.service';
@@ -6,9 +6,16 @@ import { WorkingDaysQueryDto } from '../common/dto/working-days.dto';
 import type { ApiSuccessResponse } from '../common/interfaces/working-days.interface';
 
 @ApiTags('working-days')
-@Controller('api/working-days')
+@Controller('working-days')
 export class WorkingDaysController {
-  constructor(private readonly workingDaysService: WorkingDaysService) {}
+  // constructor(private readonly workingDaysService: WorkingDaysService) {}
+  constructor(
+    @Inject(WorkingDaysService)
+    private readonly workingDaysService: WorkingDaysService
+  ) {
+    console.log('🔧 WorkingDaysController constructor called');
+    console.log('🔧 WorkingDaysService:', this.workingDaysService ? '✅ Injected' : '❌ NOT injected');
+  }
 
   @Get()
   @ApiOperation({
@@ -33,6 +40,15 @@ export class WorkingDaysController {
     `,
   })
   calculateWorkingDate(@Query() query: WorkingDaysQueryDto): ApiSuccessResponse {
-    return this.workingDaysService.calculateWorkingDate(query);
+    console.log('🎯 Controller received query:', JSON.stringify(query));
+
+    try {
+      const result = this.workingDaysService.calculateWorkingDate(query);
+      console.log('🎉 Controller returning result:', JSON.stringify(result));
+      return result;
+    } catch (error) {
+      console.error('🔴 Controller error:', error);
+      throw error;
+    }
   }
 }

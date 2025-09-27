@@ -6,6 +6,7 @@ import { HolidaysModule } from '../holidays/holidays.module';
 @Module({
   imports: [HolidaysModule],
   providers: [WorkingDaysService],
-  controllers: [WorkingDaysController]
+  controllers: [WorkingDaysController],
+  exports: [WorkingDaysService]
 })
 export class WorkingDaysModule {}

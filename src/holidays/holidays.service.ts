@@ -20,6 +20,11 @@ export class HolidaysService implements OnModuleInit {
   private holidays: Set<string> = new Set();
   private readonly holidaysUrl = 'https://content.capta.co/Recruitment/WorkingDays.json';
 
+  constructor() {
+    console.log('🔧 HolidaysService constructor called');
+  }
+
+
   // se ejecuta al iniciar la app
   async onModuleInit(): Promise<void> {
     await this.loadHolidays();
@@ -35,7 +40,8 @@ export class HolidaysService implements OnModuleInit {
       this.holidays = new Set(response.data); // cambiar/set para 0(1)
       this.logger.log(`Loaded ${this.holidays.size} holidays`);
     } catch (error) {
-      this.logger.error('Failed to load holidays:', error.message);
+      this.logger.error('Failed to load holidays:', error);
+      // this.logger.error('Failed to load holidays:', error.message);
       throw new Error('Failed to initialize holidays service');
     }
   }

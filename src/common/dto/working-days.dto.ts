@@ -12,7 +12,6 @@ export class WorkingDaysQueryDto {
   })
   @IsOptional()
   @IsNumberString({}, { message: 'days must be a valid positive integer' })
-  // @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
   days?: string;
 
   @ApiPropertyOptional({
@@ -24,7 +23,6 @@ export class WorkingDaysQueryDto {
   })
   @IsOptional()
   @IsNumberString({}, { message: 'hours must be a valid positive integer' })
-  // @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
   hours?: string;
 
   @ApiPropertyOptional({

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import * as moment from 'moment-timezone';
 import { HolidaysService } from '../holidays/holidays.service';
 import { 
@@ -42,8 +42,16 @@ export class WorkingDaysService {
     workingDays: [1, 2, 3, 4, 5] // lunes a viernes
   };
 
-  constructor(private readonly holidaysService: HolidaysService) {}
-
+  // constructor(private readonly holidaysService: HolidaysService) {
+  //   console.log('🔧 WorkingDaysService initialized with config:', this.config);
+  // }
+  constructor(
+    @Inject(HolidaysService) // ← Inyección explícita
+    private readonly holidaysService: HolidaysService
+  ) {
+    console.log('🔧 WorkingDaysService constructor called');
+    console.log('🔧 HolidaysService:', this.holidaysService ? '✅ Injected' : '❌ NOT injected');
+  }
   calculateWorkingDate(queryDto: WorkingDaysQueryDto): ApiSuccessResponse {
     const params = this.parseAndValidateParams(queryDto);
     
@@ -65,6 +73,7 @@ export class WorkingDaysService {
     }
 
     // convertir a UTC y luego retornar
+    console.log(`🎯 Final result:`, resultDate.utc().toISOString());
     return {
       date: resultDate.utc().toISOString()
     };
@@ -106,6 +115,8 @@ export class WorkingDaysService {
         throw new BadRequestException('date must be a valid ISO 8601 date string with Z suffix');
       }
     }
+
+    console.log(`parametros recibidos - days: ${params.days}, hours: ${params.hours}, date: ${params.date?.toISOString()}`);
 
     return params;
   }
