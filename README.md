@@ -4,33 +4,111 @@
 
 ## Características
 
-- ✅ Cálculo preciso de días y horas hábiles
-- ✅ Manejo de días festivos colombianos
-- ✅ Zona horaria de Colombia (America/Bogota)
-- ✅ Horario laboral: 8:00 AM - 5:00 PM (almuerzo 12:00 PM - 1:00 PM)
-- ✅ Validación de parámetros con class-validator y class-transformer
-- ✅ Manejo de errores consistente
-- ✅ Arquitectura modular con NestJS
+- ✅ **Serverless**: Desplegada en AWS Lambda + API Gateway
+- ✅ **TypeScript**: Completamente tipada con interfaces explícitas
+- ✅ **NestJS**: Framework enterprise-grade con arquitectura modular
+- ✅ **Días festivos**: Colombianos actualizados automáticamente
+- ✅ **Horario laboral**: 8:00 AM - 5:00 PM (almuerzo 12:00-1:00 PM)
+- ✅ **Zona horaria**: Colombia (America/Bogota) con conversión a UTC
+- ✅ **Tests**: Suite completa de pruebas E2E
+- ✅ **Documentación**: Swagger/OpenAPI integrado
+- ✅ **AWS CDK**: Infrastructure as Code
+- ✅ **CI/CD Ready**: Preparado para pipelines de deployment
+
+## 🔗 Endpoints en Producción
+
+- **Cálculo**: https://gebfafc6ok.execute-api.us-west-2.amazonaws.com/prod/api/working-days
+- **Documentación**: https://gebfafc6ok.execute-api.us-west-2.amazonaws.com/prod/docs
+
+## 🚀 Uso Rápido
+
+```bash
+# Ejemplo básico - Sumar 1 hora hábil
+curl "https://gebfafc6ok.execute-api.us-west-2.amazonaws.com/prod/api/working-days?hours=1"
+
+# Ejemplo avanzado - Sumar días y horas desde fecha específica
+curl "https://gebfafc6ok.execute-api.us-west-2.amazonaws.com/prod/api/working-days?days=1&hours=4&date=2025-04-10T15:00:00.000Z"
+```
+
+## 📋 Casos de Uso
+
+| Entrada | Resultado |
+|---------|-----------|
+| `?hours=1` (viernes 5 PM) | Lunes 9:00 AM Colombia |
+| `?days=1` (desde cualquier día) | Siguiente día hábil |
+| `?days=5&hours=4` | 5 días + 4 horas hábiles |
+| Automáticamente salta fines de semana y festivos |
+
+## 🏗️ Arquitectura
+
+```
+┌─────────────────┐     ┌──────────────┐      ┌─────────────────┐
+│   API Gateway   │───▶│ AWS Lambda   │───▶ │ External APIs   │
+│                 │     │              │      │ (Holidays)      │
+│ - CORS          │     │ - NestJS     │      └─────────────────┘
+│ - Rate Limiting │     │ - Express    │
+│ - Validation    │     │ - handler.ts │
+└─────────────────┘     └──────────────┘
+```
 
 ## Instalación en local
 
+### Prerrequisitos
+
+- Node.js 18+
+- AWS CLI configurado
+- AWS CDK instalado globalmente
+
 ```bash
-# Clonar repo
+npm install -g aws-cdk
+```
+
+```bash
+# 1. Clonar repo
 git clone git@github.com:Googluu/working-days-api.git && cd working-days-api
 
-# Instalar dependencias
+# 2. Instalar dependencias
 npm install
 
-# Desarrollo
+# 3. Ejecutar tests
+npm run test:e2e
+
+# 4. Desarrollo local
 npm run start:dev
 ```
 
-## Uso local
+### Variables de entorno local
+```bash
+PORT=3000
+HOLIDAYS_URL=https://content.capta.co/Recruitment/WorkingDays.json
+```
+
+### Variables de entorno producción
+```bash
+PORT=3000
+HOLIDAYS_URL=https://content.capta.co/Recruitment/WorkingDays.json
+NODE_ENV=production
+CDK_DEFAULT_ACCOUNT=
+CDK_DEFAULT_REGION=us-west-2
+```
+
+### Casos de Prueba Validados ✅
+
+- ✅ Viernes 5:00 PM + 1 hora = Lunes 9:00 AM
+- ✅ Sábado 2:00 PM + 1 hora = Lunes 9:00 AM  
+- ✅ Martes 3:00 PM + 1 día + 4 horas = Jueves 10:00 AM
+- ✅ Manejo de días festivos colombianos
+- ✅ Salto de horario de almuerzo (12-1 PM)
+- ✅ Validación de parámetros y errores
+
+## 📡 API Specification
 
 ### Endpoint
 ```
-GET http://localhost:3000//api/working-days?days=1&hours=2&date=2025-08-01T14:00:00.000Z
+GET http://localhost:3000/api/working-days?days=1&hours=2&date=2025-08-01T14:00:00.000Z
 ```
+
+### GET /api/working-days
 
 ### Parámetros
 - `days` (opcional): Número de días hábiles a sumar
@@ -63,6 +141,51 @@ curl "http://localhost:3000/api/working-days?hours=2"
 
 # Sumar 1 día y 4 horas desde fecha específica
 curl "http://localhost:3000/api/working-days?days=1&hours=4&date=2025-04-10T15:00:00.000Z"
+```
+
+### Reglas de Negocio
+
+1. **Horario laboral**: Lunes a Viernes, 8:00 AM - 5:00 PM (Colombia)
+2. **Almuerzo**: 12:00 PM - 1:00 PM no cuenta como tiempo hábil
+3. **Festivos**: Se excluyen automáticamente los días festivos colombianos
+4. **Ajuste automático**: Fechas fuera de horario se ajustan al más cercano
+5. **Orden de suma**: Primero días, luego horas
+6. **Zona horaria**: Cálculos en Colombia, respuesta en UTC
+
+## 🚀 Deployment
+
+### Desarrollo Local
+```bash
+npm run start:dev
+# http://localhost:3000/api/working-days
+```
+
+### AWS Lambda (Producción)
+```bash
+# Deploy completo
+npm run deploy:complete
+
+# Ver logs en tiempo real
+aws logs tail /aws/lambda/working-days-api --follow
+```
+
+## 🏛️ Estructura del Proyecto
+
+```
+working-days-api/
+├── src/                   # Código fuente NestJS
+│   ├── app.module.ts      # Módulo principal
+│   ├── common/            # DTOs, interfaces, filtros
+│   ├── working-days/      # Lógica de fechas hábiles
+│   └── holidays/          # Servicio de días festivos
+├── cdk/                   # AWS CDK Infrastructure
+│   ├── bin/app.ts        # CDK App
+│   ├── lib/lambda-stack.ts # Stack definition
+│   └── lambda/handler.ts  # Lambda handler
+├── test/                  # Tests E2E
+├── package.json
+├── tsconfig.json
+└── README.md
 ```
 
 ## Doc con Swagger
