@@ -134,14 +134,15 @@ export class WorkingDaysService {
     
     // si no es dia laborable pasar al siguiente dia laborable (fin de semana o festivo)
     while (!this.isWorkingDay(workingDate)) {
-      workingDate.add(1, 'day').startOf('day').hour(this.config.workingHours.start); // siguiente dia 8 AM
+      workingDate.add(1, 'day').startOf('day').hour(this.config.workingHours.start).minute(0).second(0).millisecond(0); // siguiente dia 8 AM
     }
     
     // si es dia laborable pero fuera de horario laboral, ajuste
     const hour = workingDate.hour();
+    const minute = workingDate.minute();
     const { start, end, lunchStart, lunchEnd } = this.config.workingHours;
     
-    if (hour < start) {
+    if (hour < start || (hour === start && minute < 0)) {
       // Antes del horario laboral
       workingDate.hour(start).minute(0).second(0).millisecond(0);
     } else if (hour >= end) {
@@ -176,53 +177,76 @@ export class WorkingDaysService {
     let remainingHours = hours;
     
     while (remainingHours > 0) {
-      const { lunchStart, lunchEnd, end } = this.config.workingHours;
+      const { start, lunchStart, lunchEnd, end } = this.config.workingHours;
       const currentHour = resultDate.hour();
       const currentMinute = resultDate.minute();
       
       let availableHoursUntilLunch = 0;
       let availableHoursAfterLunch = 0;
+
+      // Calcular tiempo disponible en el día actual
+      let availableHours = 0;
       
-      // Calcular horas disponibles antes del almuerzo
       if (currentHour < lunchStart) {
-        availableHoursUntilLunch = lunchStart - currentHour - (currentMinute / 60);
-      }
-      
-      // Calcular horas disponibles despues del almuerzo
-      if (currentHour < lunchEnd) {
-        availableHoursAfterLunch = end - lunchEnd;
-      } else if (currentHour < end) {
-        availableHoursAfterLunch = end - currentHour - (currentMinute / 60);
-      }
-      
-      const totalAvailableHours = availableHoursUntilLunch + availableHoursAfterLunch;
-      
-      if (remainingHours <= totalAvailableHours) {
-        // Puede terminar hoy
-        if (remainingHours <= availableHoursUntilLunch) {
-          // Terminar antes del almuerzo
+        // Estamos antes del almuerzo
+        const hoursUntilLunch = lunchStart - currentHour - (currentMinute / 60);
+        const hoursAfterLunch = end - lunchEnd;
+        availableHours = hoursUntilLunch + hoursAfterLunch;
+        
+        if (remainingHours <= hoursUntilLunch) {
+          // Termina antes del almuerzo
+          resultDate.add(remainingHours, 'hours');
+          remainingHours = 0;
+        } else if (remainingHours <= availableHours) {
+          // Cruza el almuerzo pero termina el mismo día
+          const hoursAfterLunchNeeded = remainingHours - hoursUntilLunch;
+          resultDate.hour(lunchEnd).minute(0).second(0).millisecond(0);
+          resultDate.add(hoursAfterLunchNeeded, 'hours');
+          remainingHours = 0;
+        } else {
+          // Necesita continuar al siguiente día
+          remainingHours -= availableHours;
+          resultDate = this.moveToNextWorkingDay(resultDate);
+        }
+      } else if (currentHour >= lunchEnd && currentHour < end) {
+        // Estamos después del almuerzo
+        availableHours = end - currentHour - (currentMinute / 60);
+        
+        if (remainingHours <= availableHours) {
+          // Termina en el día actual
           resultDate.add(remainingHours, 'hours');
           remainingHours = 0;
         } else {
-          // Necesita continuar después del almuerzo
-          const hoursAfterLunch = remainingHours - availableHoursUntilLunch;
-          resultDate.hour(lunchEnd).minute(0).second(0).millisecond(0);
-          resultDate.add(hoursAfterLunch, 'hours');
-          remainingHours = 0;
+          // Necesita continuar al siguiente día
+          remainingHours -= availableHours;
+          resultDate = this.moveToNextWorkingDay(resultDate);
         }
       } else {
-        // Mover al siguiente día laborable
-        remainingHours -= totalAvailableHours;
-        resultDate.add(1, 'day');
-        
-        while (!this.isWorkingDay(resultDate)) {
-          resultDate.add(1, 'day');
+        // Estamos fuera del horario laboral (durante almuerzo o después de 5 PM)
+        if (currentHour >= lunchStart && currentHour < lunchEnd) {
+          // Durante almuerzo - mover a 1:00 PM
+          resultDate.hour(lunchEnd).minute(0).second(0).millisecond(0);
+        } else {
+          // Después de 5 PM - mover al siguiente día
+          resultDate = this.moveToNextWorkingDay(resultDate);
         }
-        
-        resultDate.hour(this.config.workingHours.start).minute(0).second(0).millisecond(0);
       }
     }
     
     return resultDate;
+  }
+
+  /**
+   * NUEVO: Helper para mover al siguiente día laboral
+   */
+  private moveToNextWorkingDay(date: moment.Moment): moment.Moment {
+    let nextDay = date.clone().add(1, 'day');
+    
+    while (!this.isWorkingDay(nextDay)) {
+      nextDay.add(1, 'day');
+    }
+    
+    // Establecer a las 8:00 AM del siguiente día laboral
+    return nextDay.hour(this.config.workingHours.start).minute(0).second(0).millisecond(0);
   }
 }
